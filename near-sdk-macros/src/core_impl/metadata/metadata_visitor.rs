@@ -42,9 +42,6 @@ impl MetadataVisitor {
         if !self.errors.is_empty() {
             return Err(self.errors[0].clone());
         }
-        let panic_hook = quote! {
-            near_sdk::env::setup_panic_hook();
-        };
         let methods: Vec<TokenStream2> = self
             .impl_item_infos
             .iter()
@@ -52,17 +49,16 @@ impl MetadataVisitor {
             .map(|m| m.metadata_struct())
             .collect();
         Ok(quote! {
-            #[cfg(target_arch = "wasm32")]
-            #[no_mangle]
-            pub extern "C" fn metadata() {
-                #panic_hook
-                use borsh::*;
-                let metadata = near_sdk::Metadata::new(vec![
-                    #(#methods),*
-                ]);
-                let data = near_sdk::borsh::BorshSerialize::try_to_vec(&metadata).expect("Failed to serialize the metadata using Borsh");
-                near_sdk::env::value_return(&data);
-            }
+            const _: () = {
+                #[no_mangle]
+                #[cfg(not(target_arch = "wasm32"))]
+                pub fn __near_metadata() -> near_sdk::Metadata {
+                    use borsh::*;
+                    near_sdk::Metadata::new(vec![
+                        #(#methods),*
+                    ])
+                }
+            };
         })
     }
 }
