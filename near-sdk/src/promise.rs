@@ -1,4 +1,5 @@
 use borsh::BorshSchema;
+use schemars::JsonSchema;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::io::{Error, Write};
@@ -420,6 +421,16 @@ impl serde::Serialize for Promise {
     }
 }
 
+impl JsonSchema for Promise {
+    fn schema_name() -> String {
+        "Promise".to_string()
+    }
+
+    fn json_schema(gen: &mut schemars::gen::SchemaGenerator) -> schemars::schema::Schema {
+        gen.subschema_for::<()>()
+    }
+}
+
 impl borsh::BorshSerialize for Promise {
     fn serialize<W: Write>(&self, _writer: &mut W) -> Result<(), Error> {
         *self.should_return.borrow_mut() = true;
@@ -430,7 +441,7 @@ impl borsh::BorshSerialize for Promise {
     }
 }
 
-#[derive(serde::Serialize)]
+#[derive(serde::Serialize, JsonSchema)]
 #[serde(untagged)]
 pub enum PromiseOrValue<T> {
     Promise(Promise),

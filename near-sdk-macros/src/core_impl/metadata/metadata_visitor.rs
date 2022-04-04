@@ -4,6 +4,7 @@
 //! For this we implement the visitor.
 use crate::ItemImplInfo;
 
+use super::TypeRegistry;
 use proc_macro2::TokenStream as TokenStream2;
 use quote::{quote, ToTokens};
 use syn::visit::Visit;
@@ -39,6 +40,7 @@ impl MetadataVisitor {
     }
 
     pub fn generate_metadata_method(&self) -> syn::Result<TokenStream2> {
+        let mut registry = TypeRegistry::new();
         if !self.errors.is_empty() {
             return Err(self.errors[0].clone());
         }
@@ -46,7 +48,12 @@ impl MetadataVisitor {
             .impl_item_infos
             .iter()
             .flat_map(|i| &i.methods)
-            .map(|m| m.metadata_struct())
+            .map(|m| m.metadata_struct(&mut registry))
+            .collect();
+        let types: Vec<TokenStream2> = registry
+            .types
+            .iter()
+            .map(|(t, id)| quote! { near_sdk::TypeDef { id: #id, schema: schemars::schema_for!(#t).schema } })
             .collect();
         Ok(quote! {
             const _: () = {
@@ -54,9 +61,10 @@ impl MetadataVisitor {
                 #[cfg(not(target_arch = "wasm32"))]
                 pub fn __near_metadata() -> near_sdk::Metadata {
                     use borsh::*;
-                    near_sdk::Metadata::new(vec![
-                        #(#methods),*
-                    ])
+                    near_sdk::Metadata::new(
+                        vec![#(#methods),*],
+                        vec![#(#types),*],
+                    )
                 }
             };
         })

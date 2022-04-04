@@ -1,8 +1,10 @@
-use crate::{BindgenArgType, ImplItemMethodInfo, InputStructType, MethodType, SerializerType};
+use crate::{core_impl::BindgenArgType, ImplItemMethodInfo, MethodType};
 
 use proc_macro2::TokenStream as TokenStream2;
 use quote::quote;
 use syn::ReturnType;
+
+use super::TypeRegistry;
 
 impl ImplItemMethodInfo {
     /// Generates metadata struct for this method.
@@ -33,67 +35,41 @@ impl ImplItemMethodInfo {
     /// }
     /// ```
     /// If args are serialized with Borsh it will not include `#[derive(borsh::BorshSchema)]`.
-    pub fn metadata_struct(&self) -> TokenStream2 {
+    pub fn metadata_struct(&self, registry: &mut TypeRegistry) -> TokenStream2 {
         let method_name_str = self.attr_signature_info.ident.to_string();
         let is_view = matches!(&self.attr_signature_info.method_type, &MethodType::View);
         let is_init = matches!(
             &self.attr_signature_info.method_type,
             &MethodType::Init | &MethodType::InitIgnoreState
         );
-        let args = if self.attr_signature_info.input_args().next().is_some() {
-            let input_struct =
-                self.attr_signature_info.input_struct(InputStructType::Deserialization);
-            // If input args are JSON then we need to additionally specify schema for them.
-            let additional_schema = match &self.attr_signature_info.input_serializer {
-                SerializerType::Borsh => TokenStream2::new(),
-                SerializerType::JSON => quote! {
-                    #[derive(borsh::BorshSchema)]
-                },
-            };
-            quote! {
-                {
-                    #additional_schema
-                    #[allow(dead_code)]
-                    #input_struct
-                    Some(Input::schema_container())
-                }
-            }
-        } else {
-            quote! {
-                 None
-            }
-        };
-        let callbacks: Vec<_> = self
+        let args: Vec<TokenStream2> = self
+            .attr_signature_info
+            .input_args()
+            .map(|arg| {
+                let type_id = registry.register_type(Box::new(arg.ty.clone()));
+                quote! { #type_id }
+            })
+            .collect();
+        let callbacks: Vec<TokenStream2> = self
             .attr_signature_info
             .args
             .iter()
             .filter(|arg| matches!(arg.bindgen_ty, BindgenArgType::CallbackArg))
             .map(|arg| {
-                let ty = &arg.ty;
-                quote! {
-                    #ty::schema_container()
-                }
+                let type_id = registry.register_type(Box::new(arg.ty.clone()));
+                quote! { #type_id }
             })
             .collect();
-        let callbacks_vec = match self
+        let callbacks_vec: Vec<TokenStream2> = self
             .attr_signature_info
             .args
             .iter()
             .filter(|arg| matches!(arg.bindgen_ty, BindgenArgType::CallbackArgVec))
-            .last()
-        {
-            None => {
-                quote! {
-                    None
-                }
-            }
-            Some(arg) => {
-                let ty = &arg.ty;
-                quote! {
-                    Some(#ty::schema_container())
-                }
-            }
-        };
+            .map(|arg| {
+                let type_id = registry.register_type(Box::new(arg.ty.clone()));
+                quote! { #type_id }
+            })
+            .collect();
         let result = match &self.attr_signature_info.returns {
             ReturnType::Default => {
                 quote! {
@@ -101,8 +77,9 @@ impl ImplItemMethodInfo {
                 }
             }
             ReturnType::Type(_, ty) => {
+                let type_id = registry.register_type(ty.clone());
                 quote! {
-                    Some(#ty::schema_container())
+                    Some(#type_id)
                 }
             }
         };
@@ -112,9 +89,9 @@ impl ImplItemMethodInfo {
                  name: #method_name_str.to_string(),
                  is_view: #is_view,
                  is_init: #is_init,
-                 args: #args,
+                 args: vec![#(#args),*],
                  callbacks: vec![#(#callbacks),*],
-                 callbacks_vec: #callbacks_vec,
+                 callbacks_vec: vec![#(#callbacks_vec),*],
                  result: #result
              }
         }

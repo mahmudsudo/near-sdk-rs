@@ -23,7 +23,7 @@ mod promise;
 pub use promise::{Promise, PromiseOrValue};
 
 mod metadata;
-pub use metadata::{Metadata, MethodMetadata};
+pub use metadata::{Metadata, MethodMetadata, TypeDef};
 
 pub mod json_types;
 
