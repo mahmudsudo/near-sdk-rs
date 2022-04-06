@@ -1,13 +1,13 @@
 use schemars::schema::SchemaObject;
 use serde::{Deserialize, Serialize};
 /// Version of the metadata format.
-const METADATA_SEMVER: [u32; 3] = [0, 1, 0];
+const METADATA_SEMVER: &str = "0.0.1";
 
 /// Metadata of the contract.
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct Metadata {
     /// Semver of the metadata.
-    pub version: [u32; 3],
+    pub schema_version: String,
     /// Metadata of all methods.
     pub methods: Vec<MethodMetadata>,
     /// Type registry
@@ -17,7 +17,7 @@ pub struct Metadata {
 impl Metadata {
     pub fn new(methods: Vec<MethodMetadata>, types: Vec<TypeDef>) -> Self {
         schemars::schema_for!(u32);
-        Self { version: METADATA_SEMVER, methods, types }
+        Self { schema_version: METADATA_SEMVER.to_string(), methods, types }
     }
 }
 

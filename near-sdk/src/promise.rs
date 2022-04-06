@@ -441,7 +441,7 @@ impl borsh::BorshSerialize for Promise {
     }
 }
 
-#[derive(serde::Serialize, JsonSchema)]
+#[derive(serde::Serialize)]
 #[serde(untagged)]
 pub enum PromiseOrValue<T> {
     Promise(Promise),
@@ -477,5 +477,15 @@ impl<T: borsh::BorshSerialize> borsh::BorshSerialize for PromiseOrValue<T> {
             // The promise is dropped to cause env::promise calls.
             PromiseOrValue::Promise(p) => p.serialize(writer),
         }
+    }
+}
+
+impl<T: JsonSchema> JsonSchema for PromiseOrValue<T> {
+    fn schema_name() -> String {
+        format!("PromiseOrValue_for_{}", T::schema_name())
+    }
+
+    fn json_schema(gen: &mut schemars::gen::SchemaGenerator) -> schemars::schema::Schema {
+        T::json_schema(gen)
     }
 }
