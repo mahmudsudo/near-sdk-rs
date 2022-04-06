@@ -1,5 +1,5 @@
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
-use near_sdk::{env, Gas};
+use near_sdk::{env, metadata, Gas};
 use near_sdk::{ext_contract, log, near_bindgen, PromiseOrValue};
 
 // Prepaid gas for a single (not inclusive of recursion) `factorial` call.
@@ -8,6 +8,7 @@ const FACTORIAL_CALL_GAS: Gas = Gas(20_000_000_000_000);
 // Prepaid gas for a single `factorial_mult` call.
 const FACTORIAL_MULT_CALL_GAS: Gas = Gas(10_000_000_000_000);
 
+metadata! {
 #[near_bindgen]
 #[derive(Default, BorshDeserialize, BorshSerialize)]
 pub struct CrossContract {}
@@ -42,4 +43,5 @@ impl CrossContract {
         log!("Multiplied {:?}", result.clone());
         result
     }
+}
 }

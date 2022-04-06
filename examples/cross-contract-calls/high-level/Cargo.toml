@@ -9,3 +9,4 @@ crate-type = ["cdylib"]
 
 [dependencies]
 near-sdk = { path = "../../../near-sdk" }
+schemars = "0.8.8"
