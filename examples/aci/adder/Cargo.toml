@@ -1,0 +1,13 @@
+[package]
+name = "adder"
+version = "1.1.0"
+authors = ["Near Inc <hello@nearprotocol.com>"]
+edition = "2018"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+near-sdk = { path = "../../../near-sdk" }
+serde = { version = "1", features = ["derive"] }
+schemars = "0.8.8"
