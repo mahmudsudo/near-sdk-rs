@@ -75,10 +75,10 @@
 #[proc_macro]
 pub fn schemafy(tokens: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let def = syn::parse_macro_input!(tokens as Def);
-    let root_name = def.root;
+    let contract_name = def.contract_name;
     let input_file = def.input_file.value();
     schemafy_lib::Generator::builder()
-        .with_root_name(root_name)
+        .with_contract_name(contract_name)
         .with_input_file(&input_file)
         .build()
         .generate()
@@ -86,22 +86,25 @@ pub fn schemafy(tokens: proc_macro::TokenStream) -> proc_macro::TokenStream {
 }
 
 struct Def {
-    root: Option<String>,
+    contract_name: String,
     input_file: syn::LitStr,
 }
 
 impl syn::parse::Parse for Def {
     fn parse(input: syn::parse::ParseStream<'_>) -> syn::Result<Self> {
-        let root = if input.peek(syn::Ident) {
-            let root_ident: syn::Ident = input.parse()?;
-            if root_ident != "root" {
-                return Err(syn::Error::new(root_ident.span(), "Expected `root`"));
+        let contract_name = if input.peek(syn::Ident) {
+            let contract_name_ident: syn::Ident = input.parse()?;
+            if contract_name_ident != "contract_name" {
+                return Err(syn::Error::new(
+                    contract_name_ident.span(),
+                    "Expected `contract_name`",
+                ));
             }
             input.parse::<syn::Token![:]>()?;
-            Some(input.parse::<syn::Ident>()?.to_string())
+            input.parse::<syn::Ident>()?.to_string()
         } else {
-            None
+            panic!("Expected a contract name to be passed");
         };
-        Ok(Def { root, input_file: input.parse()? })
+        Ok(Def { contract_name, input_file: input.parse()? })
     }
 }

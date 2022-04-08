@@ -303,7 +303,7 @@ impl<'a, 'r> FieldExpander<'a, 'r> {
 }
 
 pub struct Expander<'r> {
-    root_name: Option<&'r str>,
+    contract_name: &'r str,
     schemafy_path: &'r str,
     root: &'r Schema,
     current_type: String,
@@ -327,13 +327,9 @@ where
 }
 
 impl<'r> Expander<'r> {
-    pub fn new(
-        root_name: Option<&'r str>,
-        schemafy_path: &'r str,
-        root: &'r Schema,
-    ) -> Expander<'r> {
+    pub fn new(contract_name: &'r str, schemafy_path: &'r str, root: &'r Schema) -> Expander<'r> {
         Expander {
-            root_name,
+            contract_name,
             root,
             schemafy_path,
             current_field: "".into(),
@@ -356,7 +352,7 @@ impl<'r> Expander<'r> {
             .unwrap_or_else(|| s.to_owned());
 
         let ref_ = if fragment.is_empty() {
-            self.root_name.expect("No root name specified for schema")
+            self.contract_name
         } else {
             fragment.split('/').last().expect("Component")
         };
@@ -742,13 +738,6 @@ impl<'r> Expander<'r> {
     }
 
     pub fn expand(&mut self, schema: &Schema) -> TokenStream {
-        // match self.root_name {
-        //     Some(name) => {
-        //         let schema = self.expand_schema(name, schema);
-        //         self.types.push((name.to_string(), schema));
-        //     }
-        //     None => self.expand_definitions(schema),
-        // }
         let type_decl = self.expand_schema(&schema.title.clone().unwrap(), &schema);
         let definition_tokens = match schema.description {
             Some(ref comment) => {

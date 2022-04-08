@@ -1,6 +1,7 @@
 use crate::Expander;
 use near_sdk::Metadata;
 use std::{
+    collections::HashMap,
     io,
     path::{Path, PathBuf},
 };
@@ -16,7 +17,7 @@ pub struct Generator<'a, 'b> {
     /// The name of the root type defined by the schema. If the schema
     /// does not define a root type (some schemas are simply a
     /// collection of definitions) then simply pass `None`.
-    pub root_name: Option<String>,
+    pub contract_name: String,
     /// The module path to this crate. Some generated code may make
     /// use of types defined in this crate. Unless you have
     /// re-exported this crate or imported it under a different name,
@@ -46,23 +47,59 @@ impl<'a, 'b> Generator<'a, 'b> {
 
         let near_metadata = serde_json::from_str::<Metadata>(&metadata_json).expect("123");
 
-        println!("NEAR METADATA: {:?}", &near_metadata);
-
         let mut token_stream = proc_macro2::TokenStream::new();
+        let mut registry = HashMap::<u32, String>::new();
         for t in near_metadata.types {
             let schema_json = serde_json::to_string(&t.schema).unwrap();
-
-            println!("SCHEMA JSON: {:?}", &schema_json);
 
             let schema = serde_json::from_str(&schema_json).unwrap_or_else(|err| {
                 panic!("Cannot parse `{}` as JSON: {}", input_file.to_string_lossy(), err)
             });
 
-            println!("SCHEMA: {:?}", &schema);
-            let mut expander =
-                Expander::new(self.root_name.as_deref(), self.schemafy_path, &schema);
+            let mut expander = Expander::new(&self.contract_name, self.schemafy_path, &schema);
             token_stream.extend(expander.expand(&schema));
+            registry.insert(t.id, schema.title.clone().unwrap());
         }
+
+        let methods = near_metadata
+            .methods
+            .iter()
+            .map(|m| {
+                let name = format_ident!("{}", m.name);
+                let result_type = m
+                    .result
+                    .map(|r_id| {
+                        let r_type = format_ident!(
+                            "{}",
+                            registry.get(&r_id).expect("Unexpected result type")
+                        );
+                        quote! { -> #r_type }
+                    })
+                    .unwrap_or_else(|| quote! {});
+                let args = m
+                    .args
+                    .iter()
+                    .enumerate()
+                    .map(|(i, a_id)| {
+                        let a_type = format_ident!(
+                            "{}",
+                            registry.get(&a_id).expect("Unexpected argument type")
+                        );
+                        let a_name = format_ident!("arg{}", &i);
+                        quote! { #a_name: #a_type }
+                    })
+                    .collect::<Vec<_>>();
+                quote! { fn #name(&self, #(#args),*) #result_type; }
+            })
+            .collect::<Vec<_>>();
+
+        let ext_contract_ident = format_ident!("{}", &self.contract_name);
+        token_stream.extend(quote! {
+            #[near_sdk::ext_contract]
+            pub trait #ext_contract_ident {
+                #(#methods)*
+            }
+        });
 
         token_stream
     }
@@ -87,7 +124,7 @@ impl<'a, 'b> Default for GeneratorBuilder<'a, 'b> {
     fn default() -> Self {
         Self {
             inner: Generator {
-                root_name: None,
+                contract_name: "".to_string(),
                 schemafy_path: "::schemafy_core::",
                 input_file: Path::new("schema.json"),
             },
@@ -96,12 +133,12 @@ impl<'a, 'b> Default for GeneratorBuilder<'a, 'b> {
 }
 
 impl<'a, 'b> GeneratorBuilder<'a, 'b> {
-    pub fn with_root_name(mut self, root_name: Option<String>) -> Self {
-        self.inner.root_name = root_name;
+    pub fn with_contract_name(mut self, contract_name: String) -> Self {
+        self.inner.contract_name = contract_name;
         self
     }
-    pub fn with_root_name_str(mut self, root_name: &str) -> Self {
-        self.inner.root_name = Some(root_name.to_string());
+    pub fn with_contract_name_str(mut self, contract_name: &str) -> Self {
+        self.inner.contract_name = contract_name.to_string();
         self
     }
     pub fn with_input_file<P: ?Sized + AsRef<Path>>(mut self, input_file: &'b P) -> Self {
