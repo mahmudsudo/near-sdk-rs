@@ -1,9 +1,6 @@
 use anyhow::{Context, Result};
 use cargo_metadata::{Metadata as CargoMetadata, MetadataCommand, Package};
-use serde_json::{Map, Value};
-use std::{fs, path::PathBuf};
-use toml::value;
-use url::Url;
+use std::path::PathBuf;
 
 use crate::workspace::ManifestPath;
 
@@ -13,9 +10,6 @@ pub struct CrateMetadata {
     pub manifest_path: ManifestPath,
     pub cargo_meta: cargo_metadata::Metadata,
     pub root_package: Package,
-    pub documentation: Option<Url>,
-    pub homepage: Option<Url>,
-    pub user: Option<Map<String, Value>>,
     pub target_directory: PathBuf,
 }
 
@@ -36,16 +30,10 @@ impl CrateMetadata {
             target_directory = target_directory.join(package_name);
         }
 
-        let ExtraMetadata { documentation, homepage, user } =
-            get_cargo_toml_metadata(manifest_path)?;
-
         let crate_metadata = CrateMetadata {
             manifest_path: manifest_path.clone(),
             cargo_meta: metadata,
             root_package,
-            documentation,
-            homepage,
-            user,
             target_directory: target_directory.into(),
         };
         Ok(crate_metadata)
@@ -75,45 +63,4 @@ fn get_cargo_metadata(manifest_path: &ManifestPath) -> Result<(CargoMetadata, Pa
         .expect("The package is not found in the `cargo metadata` output")
         .clone();
     Ok((metadata, root_package))
-}
-
-/// Extra metadata not available via `cargo metadata`.
-struct ExtraMetadata {
-    documentation: Option<Url>,
-    homepage: Option<Url>,
-    user: Option<Map<String, Value>>,
-}
-
-/// Read extra metadata not available via `cargo metadata` directly from `Cargo.toml`
-fn get_cargo_toml_metadata(manifest_path: &ManifestPath) -> Result<ExtraMetadata> {
-    let toml = fs::read_to_string(manifest_path)?;
-    let toml: value::Table = toml::from_str(&toml)?;
-
-    let get_url = |field_name| -> Result<Option<Url>> {
-        toml.get("package")
-            .ok_or_else(|| anyhow::anyhow!("package section not found"))?
-            .get(field_name)
-            .and_then(|v| v.as_str())
-            .map(Url::parse)
-            .transpose()
-            .context(format!("{} should be a valid URL", field_name))
-            .map_err(Into::into)
-    };
-
-    let documentation = get_url("documentation")?;
-    let homepage = get_url("homepage")?;
-
-    let user = toml
-        .get("package")
-        .and_then(|v| v.get("metadata"))
-        .and_then(|v| v.get("contract"))
-        .and_then(|v| v.get("user"))
-        .and_then(|v| v.as_table())
-        .map(|v| {
-            // convert user defined section from toml to json
-            serde_json::to_string(v).and_then(|json| serde_json::from_str(&json))
-        })
-        .transpose()?;
-
-    Ok(ExtraMetadata { documentation, homepage, user })
 }

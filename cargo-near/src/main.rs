@@ -6,6 +6,7 @@ use env_logger;
 use std::{convert::TryFrom, path::PathBuf};
 use workspace::ManifestPath;
 
+mod cargo_manifest;
 mod crate_metadata;
 mod metadata;
 mod util;
@@ -15,7 +16,6 @@ mod workspace;
 #[clap(bin_name = "cargo")]
 #[clap(version = env!("CARGO_NEAR_CLI_IMPL_VERSION"))]
 pub(crate) enum Opts {
-    /// Utilities to develop Wasm smart contracts.
     #[clap(name = "near")]
     #[clap(version = env!("CARGO_NEAR_CLI_IMPL_VERSION"))]
     #[clap(setting = AppSettings::DeriveDisplayOrder)]
