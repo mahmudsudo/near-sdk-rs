@@ -1,8 +1,6 @@
-use crate::{
-    crate_metadata::CrateMetadata,
-    util,
-    workspace::{ManifestPath, Workspace},
-};
+use crate::crate_metadata::CrateMetadata;
+use crate::util;
+use crate::workspace::{ManifestPath, Workspace};
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
@@ -17,18 +15,37 @@ pub struct MetadataResult {
     pub dest_metadata: PathBuf,
 }
 
+/// Smart contract meta information.
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct ContractMetaInfo {
+    /// The name of the smart contract.
+    pub name: String,
+    /// The version of the smart contract.
+    pub version: String,
+    /// The authors of the smart contract.
+    pub authors: Vec<String>,
+}
+
 /// Smart contract metadata.
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct ContractMetadata {
-    /// Raw JSON of the contract's abi metadata, generated during contract compilation.
+    metainfo: ContractMetaInfo,
     #[serde(flatten)]
-    pub abi: Map<String, Value>,
+    pub aci: Map<String, Value>,
 }
 
 impl ContractMetadata {
-    /// Construct new contract metadata.
-    pub fn new(abi: Map<String, Value>) -> Self {
-        Self { abi }
+    pub fn new(metainfo: ContractMetaInfo, aci: Map<String, Value>) -> Self {
+        Self { metainfo, aci }
+    }
+}
+
+fn extract_metainfo(crate_metadata: &CrateMetadata) -> ContractMetaInfo {
+    let package = &crate_metadata.root_package;
+    ContractMetaInfo {
+        name: package.name.clone(),
+        version: package.version.to_string(),
+        authors: package.authors.clone(),
     }
 }
 
@@ -53,7 +70,8 @@ pub(crate) fn execute(crate_metadata: &CrateMetadata) -> Result<MetadataResult> 
 
         let near_meta: serde_json::Map<String, serde_json::Value> =
             serde_json::from_slice(&stdout)?;
-        let metadata = ContractMetadata::new(near_meta);
+        let metainfo = extract_metainfo(&crate_metadata);
+        let metadata = ContractMetadata::new(metainfo, near_meta);
         let contents = serde_json::to_string_pretty(&metadata)?;
         fs::write(&out_path_metadata, contents)?;
 
