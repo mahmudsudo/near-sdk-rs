@@ -2,8 +2,8 @@ use crate::crate_metadata::CrateMetadata;
 use crate::util;
 use crate::workspace::{ManifestPath, Workspace};
 use anyhow::Result;
-use near_sdk::__private::{Abi, AbiRoot};
-use serde::{Deserialize, Serialize};
+use near_sdk::__private::{AbiMetainfo, AbiRoot};
+use std::collections::HashMap;
 use std::{fs, path::PathBuf};
 
 const METADATA_FILE: &str = "abi.json";
@@ -15,44 +15,13 @@ pub struct MetadataResult {
     pub dest_metadata: PathBuf,
 }
 
-/// Smart contract meta information.
-#[derive(Clone, Debug, Deserialize, Serialize)]
-pub struct ContractMetaInfo {
-    /// The name of the smart contract.
-    pub name: String,
-    /// The version of the smart contract.
-    pub version: String,
-    /// The authors of the smart contract.
-    pub authors: Vec<String>,
-}
-
-/// Smart contract metadata.
-#[derive(Clone, Debug, Deserialize, Serialize)]
-pub struct ContractMetadata {
-    /// Semver of the ABI schema format.
-    pub abi_schema_version: String,
-    /// Meta information about the contract.
-    pub metainfo: ContractMetaInfo,
-    /// Core ABI information (functions and types).
-    pub abi: Abi,
-}
-
-impl ContractMetadata {
-    pub fn new(abi_root: AbiRoot, metainfo: ContractMetaInfo) -> Self {
-        Self {
-            abi_schema_version: abi_root.abi_schema_version,
-            metainfo: metainfo,
-            abi: abi_root.abi,
-        }
-    }
-}
-
-fn extract_metainfo(crate_metadata: &CrateMetadata) -> ContractMetaInfo {
+fn extract_metainfo(crate_metadata: &CrateMetadata) -> AbiMetainfo {
     let package = &crate_metadata.root_package;
-    ContractMetaInfo {
-        name: package.name.clone(),
-        version: package.version.to_string(),
+    AbiMetainfo {
+        name: Some(package.name.clone()),
+        version: Some(package.version.to_string()),
         authors: package.authors.clone(),
+        other: HashMap::new(),
     }
 }
 
@@ -75,11 +44,11 @@ pub(crate) fn execute(crate_metadata: &CrateMetadata) -> Result<MetadataResult> 
             vec![],
         )?;
 
-        let near_abi: AbiRoot = serde_json::from_slice(&stdout)?;
+        let mut near_abi: AbiRoot = serde_json::from_slice(&stdout)?;
         let metainfo = extract_metainfo(&crate_metadata);
-        let metadata = ContractMetadata::new(near_abi, metainfo);
-        let contents = serde_json::to_string_pretty(&metadata)?;
-        fs::write(&out_path_metadata, contents)?;
+        near_abi.metainfo = metainfo;
+        let near_abi_json = serde_json::to_string_pretty(&near_abi)?;
+        fs::write(&out_path_metadata, near_abi_json)?;
 
         Ok(())
     };

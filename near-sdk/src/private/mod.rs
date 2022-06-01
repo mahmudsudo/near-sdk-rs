@@ -1,6 +1,6 @@
 mod abi;
 
-pub use abi::{Abi, AbiFunction, AbiParameter, AbiRoot, AbiSerializerType, AbiType};
+pub use abi::{Abi, AbiFunction, AbiMetainfo, AbiParameter, AbiRoot, AbiSerializerType, AbiType};
 
 use crate::IntoStorageKey;
 use borsh::BorshSerialize;
