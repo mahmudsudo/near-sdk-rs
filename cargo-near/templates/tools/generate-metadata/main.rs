@@ -1,12 +1,12 @@
 extern crate contract;
 
 extern "Rust" {
-    fn __near_metadata() -> near_sdk::Metadata;
+    fn __near_abi() -> near_sdk::AbiRoot;
 }
 
 fn main() -> Result<(), std::io::Error> {
-    let metadata = unsafe { __near_metadata() };
-    let contents = serde_json::to_string_pretty(&metadata)?;
+    let abi = unsafe { __near_abi() };
+    let contents = serde_json::to_string_pretty(&abi)?;
     print!("{}", contents);
     Ok(())
 }

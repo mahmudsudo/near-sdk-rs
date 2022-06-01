@@ -22,8 +22,8 @@ pub use near_sys as sys;
 mod promise;
 pub use promise::{Promise, PromiseOrValue};
 
-mod metadata;
-pub use metadata::{Metadata, MethodMetadata, TypeDef};
+mod abi;
+pub use abi::{Abi, AbiFunction, AbiParameter, AbiRoot, AbiSerializerType, AbiType};
 
 pub mod json_types;
 

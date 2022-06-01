@@ -2,11 +2,11 @@ use crate::crate_metadata::CrateMetadata;
 use crate::util;
 use crate::workspace::{ManifestPath, Workspace};
 use anyhow::Result;
+use near_sdk::{Abi, AbiRoot};
 use serde::{Deserialize, Serialize};
-use serde_json::{Map, Value};
 use std::{fs, path::PathBuf};
 
-const METADATA_FILE: &str = "metadata.json";
+const METADATA_FILE: &str = "abi.json";
 
 /// Metadata generation result.
 #[derive(serde::Serialize)]
@@ -29,14 +29,21 @@ pub struct ContractMetaInfo {
 /// Smart contract metadata.
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct ContractMetadata {
-    metainfo: ContractMetaInfo,
-    #[serde(flatten)]
-    pub aci: Map<String, Value>,
+    /// Semver of the ABI schema format.
+    pub abi_schema_version: String,
+    /// Meta information about the contract.
+    pub metainfo: ContractMetaInfo,
+    /// Core ABI information (functions and types).
+    pub abi: Abi,
 }
 
 impl ContractMetadata {
-    pub fn new(metainfo: ContractMetaInfo, aci: Map<String, Value>) -> Self {
-        Self { metainfo, aci }
+    pub fn new(abi_root: AbiRoot, metainfo: ContractMetaInfo) -> Self {
+        Self {
+            abi_schema_version: abi_root.abi_schema_version,
+            metainfo: metainfo,
+            abi: abi_root.abi,
+        }
     }
 }
 
@@ -68,10 +75,9 @@ pub(crate) fn execute(crate_metadata: &CrateMetadata) -> Result<MetadataResult> 
             vec![],
         )?;
 
-        let near_meta: serde_json::Map<String, serde_json::Value> =
-            serde_json::from_slice(&stdout)?;
+        let near_abi: AbiRoot = serde_json::from_slice(&stdout)?;
         let metainfo = extract_metainfo(&crate_metadata);
-        let metadata = ContractMetadata::new(metainfo, near_meta);
+        let metadata = ContractMetadata::new(near_abi, metainfo);
         let contents = serde_json::to_string_pretty(&metadata)?;
         fs::write(&out_path_metadata, contents)?;
 

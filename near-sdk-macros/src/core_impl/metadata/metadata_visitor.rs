@@ -44,7 +44,7 @@ impl MetadataVisitor {
         if !self.errors.is_empty() {
             return Err(self.errors[0].clone());
         }
-        let methods: Vec<TokenStream2> = self
+        let functions: Vec<TokenStream2> = self
             .impl_item_infos
             .iter()
             .flat_map(|i| &i.methods)
@@ -53,17 +53,19 @@ impl MetadataVisitor {
         let types: Vec<TokenStream2> = registry
             .types
             .iter()
-            .map(|(t, id)| quote! { near_sdk::TypeDef { id: #id, schema: schemars::schema_for!(#t).schema } })
+            .map(|(t, id)| quote! { near_sdk::AbiType { id: #id, schema: schemars::schema_for!(#t).schema } })
             .collect();
         Ok(quote! {
             const _: () = {
                 #[no_mangle]
                 #[cfg(not(target_arch = "wasm32"))]
-                pub fn __near_metadata() -> near_sdk::Metadata {
+                pub fn __near_abi() -> near_sdk::AbiRoot {
                     use borsh::*;
-                    near_sdk::Metadata::new(
-                        vec![#(#methods),*],
-                        vec![#(#types),*],
+                    near_sdk::AbiRoot::new(
+                        near_sdk::Abi {
+                            functions: vec![#(#functions),*],
+                            types: vec![#(#types),*],
+                        }
                     )
                 }
             };

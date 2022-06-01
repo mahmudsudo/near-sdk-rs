@@ -1,3 +1,6 @@
+use proc_macro2::TokenStream;
+use quote::quote;
+
 mod serializer_attr;
 pub use serializer_attr::SerializerAttr;
 
@@ -29,6 +32,19 @@ pub use item_impl_info::ItemImplInfo;
 pub enum SerializerType {
     JSON,
     Borsh,
+}
+
+impl SerializerType {
+    pub(crate) fn to_abi_serializer_type(&self) -> TokenStream {
+        match self {
+            SerializerType::JSON => quote! {
+                near_sdk::AbiSerializerType::Json
+            },
+            SerializerType::Borsh => quote! {
+                near_sdk::AbiSerializerType::Borsh
+            },
+        }
+    }
 }
 
 /// Type of the method.
