@@ -551,6 +551,7 @@ dependencies = [
  "near-sdk",
  "schemafy-near",
  "schemars",
+ "serde",
 ]
 
 [[package]]

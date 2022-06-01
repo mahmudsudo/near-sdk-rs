@@ -1,10 +1,11 @@
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::env;
 use near_sdk::near_bindgen;
+use serde::{Deserialize, Serialize};
 
 schemafy_near::schemafy!(
     contract_name: ExtAdder
-    "../res/adder-metadata.json"
+    "../res/adder-abi.json"
 );
 
 #[near_bindgen]

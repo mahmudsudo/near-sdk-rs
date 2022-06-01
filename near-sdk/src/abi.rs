@@ -1,4 +1,4 @@
-use schemars::schema::SchemaObject;
+use schemars::schema::{RootSchema, Schema};
 use serde::{Deserialize, Serialize};
 
 /// Current version of the ABI schema format.
@@ -28,6 +28,8 @@ pub struct Abi {
     pub functions: Vec<AbiFunction>,
     /// Type registry that maps type identifiers to JSON Schemas.
     pub types: Vec<AbiType>,
+    /// Root JSON Schema containing all types referenced by the registry.
+    pub root_schema: RootSchema,
 }
 
 /// Metadata of a single function.
@@ -41,6 +43,8 @@ pub struct AbiFunction {
     /// Type identifiers of the function parameters.
     pub params: Vec<AbiParameter>,
     /// Type identifiers of the callbacks of the function.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    #[serde(default)]
     pub callbacks: Vec<AbiParameter>,
     /// Type identifier of the vararg callbacks of the function.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -53,7 +57,7 @@ pub struct AbiFunction {
 #[derive(Clone, Serialize, Deserialize, Debug, PartialEq)]
 pub struct AbiType {
     pub id: TypeId,
-    pub schema: SchemaObject,
+    pub schema: Schema,
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug, PartialEq)]

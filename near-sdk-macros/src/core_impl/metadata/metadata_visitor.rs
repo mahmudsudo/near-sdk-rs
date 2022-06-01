@@ -53,7 +53,7 @@ impl MetadataVisitor {
         let types: Vec<TokenStream2> = registry
             .types
             .iter()
-            .map(|(t, id)| quote! { near_sdk::AbiType { id: #id, schema: schemars::schema_for!(#t).schema } })
+            .map(|(t, id)| quote! { near_sdk::AbiType { id: #id, schema: gen.subschema_for::<#t>() } })
             .collect();
         Ok(quote! {
             const _: () = {
@@ -61,10 +61,13 @@ impl MetadataVisitor {
                 #[cfg(not(target_arch = "wasm32"))]
                 pub fn __near_abi() -> near_sdk::AbiRoot {
                     use borsh::*;
+                    let mut gen = schemars::gen::SchemaGenerator::default();
+                    let types = vec![#(#types),*];
                     near_sdk::AbiRoot::new(
                         near_sdk::Abi {
                             functions: vec![#(#functions),*],
-                            types: vec![#(#types),*],
+                            types: types,
+                            root_schema: gen.into_root_schema_for::<String>(),
                         }
                     )
                 }

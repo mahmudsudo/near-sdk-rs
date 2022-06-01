@@ -11,3 +11,4 @@ crate-type = ["cdylib"]
 near-sdk = { path = "../../../near-sdk" }
 schemars = "0.8.8"
 schemafy-near = { path = "../../../schemafy-near" }
+serde = { version = "1", features = ["derive"] }
