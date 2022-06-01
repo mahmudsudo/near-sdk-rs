@@ -59,11 +59,11 @@ impl MetadataVisitor {
             const _: () = {
                 #[no_mangle]
                 #[cfg(not(target_arch = "wasm32"))]
-                pub fn __near_abi() -> near_sdk::AbiRoot {
+                pub fn __near_abi() -> near_sdk::__private::AbiRoot {
                     use borsh::*;
                     let mut gen = schemars::gen::SchemaGenerator::default();
                     let types = vec![#(#types),*];
-                    near_sdk::AbiRoot::new(
+                    near_sdk::__private::AbiRoot::new(
                         near_sdk::Abi {
                             functions: vec![#(#functions),*],
                             types: types,
@@ -109,8 +109,8 @@ mod tests {
             pub extern "C" fn metadata() {
                 near_sdk::env::setup_panic_hook();
                 use borsh::*;
-                let metadata = near_sdk::Metadata::new(vec![
-                    near_sdk::MethodMetadata {
+                let metadata = near_sdk::__private::Metadata::new(vec![
+                    near_sdk::__private::MethodMetadata {
                         name: "f1".to_string(),
                         is_view: true,
                         is_init: false,
@@ -119,7 +119,7 @@ mod tests {
                         callbacks_vec: None,
                         result: None
                     },
-                    near_sdk::MethodMetadata {
+                    near_sdk::__private::MethodMetadata {
                         name: "f2".to_string(),
                         is_view: false,
                         is_init: false,
@@ -138,7 +138,7 @@ mod tests {
                         callbacks_vec: None,
                         result: None
                     },
-                    near_sdk::MethodMetadata {
+                    near_sdk::__private::MethodMetadata {
                         name: "f3".to_string(),
                         is_view: false,
                         is_init: false,

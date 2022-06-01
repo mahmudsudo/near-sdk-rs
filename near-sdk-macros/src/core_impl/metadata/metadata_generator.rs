@@ -16,7 +16,7 @@ impl ImplItemMethodInfo {
     /// ```
     /// will produce this struct:
     /// ```ignore
-    /// near_sdk::FunctionMetadata {
+    /// near_sdk::__private::FunctionMetadata {
     ///     name: "f3".to_string(),
     ///     is_view: false,
     ///     is_init: false,
@@ -126,7 +126,7 @@ impl ImplItemMethodInfo {
         };
 
         quote! {
-             near_sdk::AbiFunction {
+             near_sdk::__private::AbiFunction {
                  name: #method_name_str.to_string(),
                  is_view: #is_view,
                  is_init: #is_init,
