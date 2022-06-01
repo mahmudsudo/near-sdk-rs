@@ -38,10 +38,10 @@ impl SerializerType {
     pub(crate) fn to_abi_serializer_type(&self) -> TokenStream {
         match self {
             SerializerType::JSON => quote! {
-                near_sdk::AbiSerializerType::Json
+                near_sdk::__private::AbiSerializerType::Json
             },
             SerializerType::Borsh => quote! {
-                near_sdk::AbiSerializerType::Borsh
+                near_sdk::__private::AbiSerializerType::Borsh
             },
         }
     }

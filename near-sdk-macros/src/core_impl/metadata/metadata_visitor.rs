@@ -53,7 +53,7 @@ impl MetadataVisitor {
         let types: Vec<TokenStream2> = registry
             .types
             .iter()
-            .map(|(t, id)| quote! { near_sdk::AbiType { id: #id, schema: gen.subschema_for::<#t>() } })
+            .map(|(t, id)| quote! { near_sdk::__private::AbiType { id: #id, schema: gen.subschema_for::<#t>() } })
             .collect();
         Ok(quote! {
             const _: () = {
@@ -64,7 +64,7 @@ impl MetadataVisitor {
                     let mut gen = schemars::gen::SchemaGenerator::default();
                     let types = vec![#(#types),*];
                     near_sdk::__private::AbiRoot::new(
-                        near_sdk::Abi {
+                        near_sdk::__private::Abi {
                             functions: vec![#(#functions),*],
                             types: types,
                             root_schema: gen.into_root_schema_for::<String>(),

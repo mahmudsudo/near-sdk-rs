@@ -1,6 +1,6 @@
-mod metadata;
+mod abi;
 
-pub use metadata::{Metadata, MethodMetadata};
+pub use abi::{Abi, AbiFunction, AbiParameter, AbiRoot, AbiSerializerType, AbiType};
 
 use crate::IntoStorageKey;
 use borsh::BorshSerialize;

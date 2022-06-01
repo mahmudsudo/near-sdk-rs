@@ -2,7 +2,7 @@ use crate::crate_metadata::CrateMetadata;
 use crate::util;
 use crate::workspace::{ManifestPath, Workspace};
 use anyhow::Result;
-use near_sdk::{Abi, AbiRoot};
+use near_sdk::__private::{Abi, AbiRoot};
 use serde::{Deserialize, Serialize};
 use std::{fs, path::PathBuf};
 

@@ -1,7 +1,7 @@
 extern crate contract;
 
 extern "Rust" {
-    fn __near_abi() -> near_sdk::AbiRoot;
+    fn __near_abi() -> near_sdk::__private::AbiRoot;
 }
 
 fn main() -> Result<(), std::io::Error> {

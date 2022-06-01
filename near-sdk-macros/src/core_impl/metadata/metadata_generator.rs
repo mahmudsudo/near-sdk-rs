@@ -49,7 +49,7 @@ impl ImplItemMethodInfo {
                 let type_id = registry.register_type(Box::new(arg.ty.clone()));
                 let serialization_type = arg.serializer_ty.to_abi_serializer_type();
                 quote! {
-                    near_sdk::AbiParameter {
+                    near_sdk::__private::AbiParameter {
                         type_id: #type_id,
                         serialization_type: #serialization_type,
                     }
@@ -65,7 +65,7 @@ impl ImplItemMethodInfo {
                 let type_id = registry.register_type(Box::new(arg.ty.clone()));
                 let serialization_type = arg.serializer_ty.to_abi_serializer_type();
                 quote! {
-                    near_sdk::AbiParameter {
+                    near_sdk::__private::AbiParameter {
                         type_id: #type_id,
                         serialization_type: #serialization_type,
                     }
@@ -93,7 +93,7 @@ impl ImplItemMethodInfo {
                 let serialization_type = arg.serializer_ty.to_abi_serializer_type();
                 quote! {
                     Some(
-                        near_sdk::AbiParameter {
+                        near_sdk::__private::AbiParameter {
                             type_id: #type_id,
                             serialization_type: #serialization_type,
                         }
@@ -116,7 +116,7 @@ impl ImplItemMethodInfo {
                     &self.attr_signature_info.result_serializer.to_abi_serializer_type();
                 quote! {
                     Some(
-                        near_sdk::AbiParameter {
+                        near_sdk::__private::AbiParameter {
                             type_id: #type_id,
                             serialization_type: #serialization_type,
                         }

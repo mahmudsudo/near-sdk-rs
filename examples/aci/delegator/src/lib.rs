@@ -1,5 +1,4 @@
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
-use near_sdk::env;
 use near_sdk::near_bindgen;
 use serde::{Deserialize, Serialize};
 
@@ -22,13 +21,6 @@ impl Delegator {
         d: u32,
         adder_account_id: near_sdk::AccountId,
     ) -> near_sdk::Promise {
-        let prepaid_gas = env::prepaid_gas();
-        ext_adder::add(
-            vec![a.into(), b.into()],
-            vec![c.into(), d.into()],
-            adder_account_id,
-            0,
-            prepaid_gas / 2,
-        )
+        ext_adder::ext(adder_account_id).add(vec![a.into(), b.into()], vec![c.into(), d.into()])
     }
 }
