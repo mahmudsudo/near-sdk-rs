@@ -23,13 +23,13 @@ pub fn generate(i: &ItemImplInfo) -> TokenStream2 {
         #[cfg(not(target_arch = "wasm32"))]
         const _: () = {
             #[no_mangle]
-            pub extern "C" fn #near_abi_symbol() -> Vec<u8> {
+            pub extern "C" fn #near_abi_symbol() -> *mut near_sdk::__private::ChunkedAbiEntry {
                 let mut gen = near_sdk::__private::schemars::gen::SchemaGenerator::default();
                 let functions = vec![#(#functions),*];
-                serde_json::to_vec(&near_sdk::__private::ChunkedAbiEntry::new(
+                Box::into_raw(Box::new(near_sdk::__private::ChunkedAbiEntry::new(
                      functions,
                     gen.into_root_schema_for::<String>()
-                )).unwrap()
+                )))
             }
         };
     }
